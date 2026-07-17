@@ -155,6 +155,13 @@
     
     /* 🚀 ステップ②: 引っ張って更新の見た目追加 */
     #ptr-indicator { position: fixed; top: -50px; left: 0; width: 100%; text-align: center; z-index: 1000; transition: top 0.3s; font-weight: bold; color: #008296; font-size: 13px; background: rgba(255,255,255,0.95); padding: 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 0 0 12px 12px; pointer-events: none;}
+
+    /* 🎯 🚀 Quaggaの映像巨大化・黒画面残りを強制的に黙らせる最強CSS */
+    #barcodeTestVideo video {
+      width: 100% !important;
+      height: auto !important;
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
