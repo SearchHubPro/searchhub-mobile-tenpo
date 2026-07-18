@@ -1023,6 +1023,7 @@
   </div>
 
 <script>
+    // 🚀 最優先でAppStorageを定義して未定義エラーを完全防止
     const AppStorage = {
       get: function(key, def) { try { return localStorage.getItem(key) || def; } catch(e) { return def; } },
       set: function(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
@@ -1031,33 +1032,8 @@
     const monthlyOrder = ['monthly-purchase', 'monthly-sales']; 
     const homeOrder = ['turnover', 'purchase', 'sales']; 
 
-    let currentActiveView = 'view-home';
-    let viewHistoryStack = ['view-home']; 
-    let globalInventoryData = [];
-    let invCurrentPage = 1;
-    const ITEMS_PER_PAGE = 20;
-    let globalMonthlyData = { purchase: [], sales: [] };
-    let monthlyCurrentPage = 1;
-    let currentMonthlyTab = 'monthly-purchase';
-    let globalAllOwnInventory = {}; 
-
-    let homeChartInstance = null;
-    let currentHomeMode = 'turnover';
-    let currentHomeMonth = '';
-    let homeData = {
-      availableMonths: [],
-      today: { dateStr: '--/--', buyAmount: 0, estSales: 0, buyCount: 0, estProfit: 0, profitRate: 0, roi: 0 },
-      turnover: { value: 0, inventory: 0 },
-      monthly: {}
-    };
-
-    const chartConfig = {
-      purchase: { labelBar: '日別 仕入額', labelLine: '累計 想定利益', barColor: '#008296', lineColor: '#E47911' },
-      sales: { labelBar: '日別 販売額', labelLine: '累計 確定利益', barColor: '#008296', lineColor: '#38a169' }
-    };
-
+    // 🚀 Keepaトークン確認ロジックから、消去済みのボタン(btn)の操作を完全に削除
     window.checkKeepaToken = async function() {
-      const btn = document.getElementById('keepa-token-refresh-btn');
       const valEl = document.getElementById('keepa-token-val');
       const apiKey = AppStorage.get("sh_keepa", "");
       
@@ -1066,7 +1042,6 @@
         return;
       }
       
-      if(btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true; }
       if(valEl) valEl.innerText = "...";
       
       try {
@@ -1079,8 +1054,6 @@
         }
       } catch(e) {
         if(valEl) valEl.innerText = "通信❌";
-      } finally {
-        if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt"></i> 更新'; btn.disabled = false; }
       }
     };
 
