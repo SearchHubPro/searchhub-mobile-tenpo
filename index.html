@@ -577,11 +577,6 @@
       </div>
 
       <style>
-        #ledgerTable .sales-data { display: none; }
-        #ledgerTable.sales-mode .sales-data { display: block; }
-        #ledgerTable.sales-mode th .sales-data { display: inline; }
-        #ledgerTable.sales-mode .default-data { display: none !important; }
-        
         /* セルの余白をギュッと詰める */
         #ledgerTable th, #ledgerTable td {
           padding: 8px 10px !important;
@@ -609,18 +604,9 @@
               <th style="width: 140px;">仕入先・URL・ID</th>
               <th style="width: 90px;">仕入日 / No</th>
               <th style="min-width: 220px;">商品名・ASIN</th>
-              <th style="width: 130px;">
-                <span class="default-data">コンディション</span>
-                <span class="sales-data" style="color:#2b6cb0;">販売日 / 注文番号</span>
-              </th>
-              <th style="text-align: right; width: 140px;">
-                <span class="default-data">仕入 / 販売予定</span>
-                <span class="sales-data" style="color:#2b6cb0;">売上 / 送料 / 手数料</span>
-              </th>
-              <th style="text-align: right; width: 100px;">
-                <span class="default-data">想定利益</span>
-                <span class="sales-data" style="color:#2b6cb0;">確定利益</span>
-              </th>
+              <th style="width: 130px;">コンディション<br>／ 販売日・注文番号</th>
+              <th style="text-align: right; width: 140px;">仕入・予定<br>／ 売上・送料・手数料</th>
+              <th style="text-align: right; width: 100px;">想定 ／ 確定利益</th>
               <th style="text-align:center; width: 70px;">操作</th>
             </tr>
           </thead>
@@ -3087,11 +3073,6 @@
         }
 
         // 💡 テーブルの切替
-        window.toggleLedgerView = function() {
-          const table = document.getElementById('ledgerTable');
-          if(table) table.classList.toggle('sales-mode');
-        };
-
 
        function renderLedgerList() {
       const kw = document.getElementById('ledger-search-kw').value.toLowerCase().trim();
@@ -3139,6 +3120,7 @@
         const expectedProfit = est_price > 0 ? (est_price - b_price - b_exp - expectedFee) : 0;
         const estProfitColor = (expectedProfit >= 0) ? "#07A27B" : "#e53e3e";
         const actualProfitColor = (Number(item.profit || 0) >= 0) ? "#07A27B" : "#e53e3e";
+        const isSold = (item.status === '販売済' || item.status === '返金済み' || item.status === '補填済み');
 
         let listToggleBtn = '';
         if (item.status === '納品待ち' || item.status === '出品中') {
@@ -3180,42 +3162,42 @@
           </td>
 
           <td style="padding: 12px 8px; font-weight:bold; color:#2d3748; text-align: center; vertical-align: middle;">
-            <div class="default-data" style="font-size:12px;">${escapeHtml(item.condition) || '-'}</div>
-            <div class="sales-data" style="font-size:10px;">
+            ${isSold ? `
+            <div style="font-size:10px;">
               <div style="margin-bottom:2px; color:#2b6cb0;"><i class="far fa-calendar-alt"></i> ${item.sellDate || '-'}</div>
               <div style="font-family:monospace; color:#2d3748; font-weight:bold;">${escapeHtml(item.orderNum) || '-'}</div>
-            </div>
+            </div>` : `
+            <div style="font-size:12px;">${escapeHtml(item.condition) || '-'}</div>`}
           </td>
 
           <td style="padding: 12px 8px; text-align: right; vertical-align: middle;">
-            <div class="default-data">
-              <div style="font-size:13px; font-weight:bold; color:#4a5568; margin-bottom:2px;">仕入: ¥${Number(b_price).toLocaleString()}</div>
-              <div style="font-size:13px; font-weight:bold; color:#3182ce;">予定: ¥${Number(est_price).toLocaleString()}</div>
-            </div>
-            <div class="sales-data" style="font-size:11px;">
+            ${isSold ? `
+            <div style="font-size:11px;">
               <div style="font-size:13px; font-weight:bold; color:#1a365d; margin-bottom:2px;">売上: ¥${Number(item.sales || 0).toLocaleString()}</div>
               <div style="color:#4a5568; font-weight:bold; margin-bottom:2px;">送料: ${item.shipping < 0 ? '' : '-'}¥${Math.abs(Number(item.shipping || 0)).toLocaleString()}</div>
               <div style="color:#e53e3e; font-weight:bold;">手料: ${item.fee < 0 ? '' : '-'}¥${Math.abs(Number(item.fee || 0)).toLocaleString()}</div>
-            </div>
+            </div>` : `
+            <div>
+              <div style="font-size:13px; font-weight:bold; color:#4a5568; margin-bottom:2px;">仕入: ¥${Number(b_price).toLocaleString()}</div>
+              <div style="font-size:13px; font-weight:bold; color:#3182ce;">予定: ¥${Number(est_price).toLocaleString()}</div>
+            </div>`}
           </td>
 
           <td style="padding: 12px 8px; text-align: right; vertical-align: middle; font-weight: 900; font-size:14px;">
-            <div class="default-data" style="color: ${estProfitColor};">
+            ${isSold ? `
+            <div style="color: ${actualProfitColor};">
+              ¥${Number(item.profit || 0).toLocaleString()}
+            </div>` : `
+            <div style="color: ${estProfitColor};">
               ¥${expectedProfit.toLocaleString()}
               <div style="font-size:9px; color:#718096; margin-top:2px; font-weight:bold;">(目安)</div>
-            </div>
-            <div class="sales-data" style="color: ${actualProfitColor};">
-              ¥${Number(item.profit || 0).toLocaleString()}
-            </div>
+            </div>`}
           </td>
 
           <td style="padding: 12px 8px; text-align: center; vertical-align: middle;">
-            <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-              <button onclick="toggleLedgerView()" style="background:#4a5568; color:white; border:none; padding:4px; border-radius:4px; cursor:pointer; font-size:10px; width:100%; font-weight:bold;"><i class="fas fa-exchange-alt"></i> 切替</button>
-              <div style="display:flex; gap:4px; width:100%;">
-                <button onclick="openLedgerEdit('${item.id}')" style="background:#3182ce; color:white; border:none; padding:4px 0; border-radius:4px; cursor:pointer; flex:1; font-size:10px;"><i class="fas fa-edit"></i></button>
-                <a href="https://www.amazon.co.jp/dp/${item.asin}" target="_blank" style="background:#dd6b20; color:white; padding:4px 0; border-radius:4px; text-decoration:none; flex:1; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fab fa-amazon"></i></a>
-              </div>
+            <div style="display:flex; gap:4px; width:100%;">
+              <button onclick="openLedgerEdit('${item.id}')" style="background:#3182ce; color:white; border:none; padding:6px 0; border-radius:4px; cursor:pointer; flex:1; font-size:10px;"><i class="fas fa-edit"></i></button>
+              <a href="https://www.amazon.co.jp/dp/${item.asin}" target="_blank" style="background:#dd6b20; color:white; padding:6px 0; border-radius:4px; text-decoration:none; flex:1; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fab fa-amazon"></i></a>
             </div>
           </td>
         </tr>
