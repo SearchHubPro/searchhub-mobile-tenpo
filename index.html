@@ -3122,7 +3122,7 @@
             return;
           }
 
-          const headers = ['出品済', 'No', '仕入日', '仕入先', 'URL', '商品ID', 'ASIN', '商品名', '型番', 'SKU', 'コンディション', '商品説明', '仕入値', '送料経費', '販売予定価格', '販売日', '注文番号', '売上額', '配送料', '手数料', '利益', 'ステータス', 'FBA料金', '販売手数料'];
+          const headers = ['出品済', 'No', '仕入日', '仕入先', 'URL', '商品ID', 'ASIN', '商品名', '型番', 'SKU', 'コンディション', '商品説明', '仕入値', '送料経費', '販売予定価格', '販売日', '注文番号', '売上額', '配送料', '手数料', '利益', 'ステータス'];
           const rows = [headers];
 
           filtered.forEach(item => {
@@ -3148,9 +3148,7 @@
               item.shipping || 0,
               item.fee || 0,
               item.profit || 0,
-              item.status || '',
-              item.estFbaFee || 0,
-              item.estAmazonFee || 0
+              item.status || ''
             ]);
           });
 
