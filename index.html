@@ -2899,7 +2899,7 @@
           countEl.innerText = "同期中...";
 
           try {
-            const { data, error } = await sb.from('inventories').select('*').order('created_at', { ascending: false });
+            const { data, error } = await sb.from('inventories').select('*').order('purchase_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
             if (error) throw error;
 
             if (!data || data.length === 0) {
@@ -3160,9 +3160,19 @@
           let orderId = cols[csvH["注文番号"]] || "";
           let transType = cols[csvH["トランザクションの種類"]] || "";
           let description = cols[csvH["説明"]] || "";
+          let sku = cols[csvH["SKU"]] || "";
           let getNum = (k) => cleanNum(cols[csvH[k]]);
 
+          // 💡 補填(FBA在庫の紛失・返品による在庫返金)は「返金」ではなく「調整」という種類名で記録される
+          const isAdjustmentRefund = (transType === "調整" && description.includes("FBA在庫の返金"));
+
           if (!orderId) {
+            // 注文番号が無い「調整」(紛失など)は、SKUだけを頼りに在庫を特定して補填処理する
+            if (isAdjustmentRefund && sku) {
+              let dateStr = cols[csvH["日付/時間"]] || "";
+              reportData.push({ type: "ADJ", sku: sku, date: dateStr.split(" ")[0] || "", hotenCSV: getNum("その他") });
+              continue;
+            }
             const targetExpTypes = ["FBA 在庫関連の手数料", "注文外料金", "サービス料金"];
             if (targetExpTypes.includes(transType)) {
               let amount = getNum("合計");
@@ -3183,7 +3193,7 @@
             mktShip = getNum("その他");
           }
           let isMerchantCSV = (fulfillment === "出品者" || mktShip < 0);
-          let isRefund = (transType === "返金");
+          let isRefund = (transType === "返金") || isAdjustmentRefund;
 
           reportData.push({
             type: "CSV", orderId, isMerchantCSV, isRefund,
@@ -3233,6 +3243,18 @@
             u.order_number = rd.orderId;
             u.actual_sales = rd.sales;
             u.actual_shipping = rd.isMerchant ? 0 : rd.shipping;
+            updateCount++; break;
+          }
+          else if (rd.type === "ADJ" && sheetSku === rd.sku) {
+            const u = getUpdate(row);
+            if (u.status_override === '返金済み' || u.status_override === '補填済み') { updateCount++; break; }
+            const m = Number(row.buy_price || 0) + Number(row.shipping_cost || 0);
+            u.actual_sales = rd.hotenCSV;
+            u.actual_shipping = 0;
+            u.actual_fee = 0;
+            u.profit = rd.hotenCSV - m;
+            u.status_override = '補填済み';
+            if (!u.sale_date) u.sale_date = toIsoDate(rd.date);
             updateCount++; break;
           }
           else if (rd.type === "CSV" && sheetOrder === rd.orderId && sheetOrder !== "") {
