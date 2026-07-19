@@ -524,6 +524,11 @@
       </div>
 
       <div style="background:#f7fafc; border-radius:12px; padding:16px; margin-bottom:16px;">
+        <label style="font-size:12px; font-weight:bold; color:#4a5568; display:block; margin-bottom:6px;">販路リスト（1行に1つ・手入力の販売情報で選べます）</label>
+        <textarea id="info-channels" rows="4" style="width:100%; box-sizing:border-box; padding:8px; border:1px solid #cbd5e0; border-radius:6px; font-size:13px;" placeholder="例:&#10;メルカリ&#10;ヤフオク&#10;ラクマ"></textarea>
+      </div>
+
+      <div style="background:#f7fafc; border-radius:12px; padding:16px; margin-bottom:16px;">
         <div style="font-size:13px; font-weight:bold; color:#1a365d; margin-bottom:10px;">💳 カード支払い設定（最大5枠）</div>
         <div id="info-cards-container" style="display:flex; flex-direction:column; gap:12px;"></div>
       </div>
@@ -1038,6 +1043,11 @@
 
       <div style="background:#fff5f5; padding:10px; border-radius:8px; margin-top:12px; border:1px solid #feb2b2;">
         <div style="font-size:12px; font-weight:bold; color:#c53030; margin-bottom:8px;"><i class="fas fa-receipt"></i> 販売情報（古物台帳用・売却時に入力）</div>
+        <label style="font-size:11px; font-weight:bold; color:#718096; display:block; margin-bottom:2px;">販路</label>
+        <select id="edit_salesChannel" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #cbd5e0; border-radius:6px; outline:none; margin-bottom:8px;">
+          <option value="">ーー 未設定 ーー</option>
+          <option value="Amazon">Amazon</option>
+        </select>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; min-width:0;">
           <div style="min-width:0;"><label style="font-size:11px; font-weight:bold; color:#718096;">販売日</label><input type="date" id="edit_saleDate" oninput="calcEditProfit()" style="width:100%; padding:8px; box-sizing:border-box;"></div>
           <div style="min-width:0;"><label style="font-size:11px; font-weight:bold; color:#718096;">注文番号</label><input type="text" id="edit_orderNum" style="width:100%; padding:8px; box-sizing:border-box;"></div>
@@ -3070,6 +3080,7 @@
             status: status,
             estFbaFee: row.fba_fee,
             estAmazonFee: row.referral_fee,
+            salesChannel: row.sales_channel,
             isListed: row.is_listed
           };
         }
@@ -3122,12 +3133,11 @@
             return;
           }
 
-          const headers = ['出品済', 'No', '仕入日', '仕入先', 'URL', '商品ID', 'ASIN', '商品名', '型番', 'SKU', 'コンディション', '商品説明', '仕入値', '送料経費', '販売予定価格', '販売日', '注文番号', '売上額', '配送料', '手数料', '利益', 'ステータス'];
+          const headers = ['No', '仕入日', '仕入先', 'URL', '商品ID', 'ASIN', '商品名', '型番', 'SKU', 'コンディション', '商品説明', '仕入値', '送料経費', '販売予定価格', '販売日', '注文番号', '売上額', '配送料', '手数料', '利益', 'ステータス', '販路'];
           const rows = [headers];
 
           filtered.forEach(item => {
             rows.push([
-              item.isListed ? 'TRUE' : 'FALSE',
               item.no || '',
               item.buyDate || '',
               item.supplier || '',
@@ -3148,7 +3158,8 @@
               item.shipping || 0,
               item.fee || 0,
               item.profit || 0,
-              item.status || ''
+              item.status || '',
+              item.salesChannel || ''
             ]);
           });
 
@@ -3501,7 +3512,8 @@
           updates[row.id] = {
             sale_date: row.sale_date, order_number: row.order_number,
             actual_sales: row.actual_sales || 0, actual_shipping: row.actual_shipping || 0,
-            actual_fee: row.actual_fee || 0, profit: row.profit || 0, status_override: row.status_override
+            actual_fee: row.actual_fee || 0, profit: row.profit || 0, status_override: row.status_override,
+            sales_channel: row.sales_channel
           };
         }
         return updates[row.id];
@@ -3521,6 +3533,7 @@
             u.order_number = rd.orderId;
             u.actual_sales = rd.sales;
             u.actual_shipping = rd.isMerchant ? 0 : rd.shipping;
+            u.sales_channel = 'Amazon';
             updateCount++; break;
           }
           else if (rd.type === "ADJ" && sheetSku === rd.sku) {
@@ -3532,12 +3545,14 @@
             u.actual_fee = 0;
             u.profit = rd.hotenCSV - m;
             u.status_override = '補填済み';
+            u.sales_channel = 'Amazon';
             if (!u.sale_date) u.sale_date = toIsoDate(rd.date);
             updateCount++; break;
           }
           else if (rd.type === "CSV" && sheetOrder === rd.orderId && sheetOrder !== "") {
             const m = Number(row.buy_price || 0) + Number(row.shipping_cost || 0);
             const u = getUpdate(row);
+            u.sales_channel = 'Amazon';
 
             if (rd.isRefund) {
               if (u.status_override === '返金済み' || u.status_override === '補填済み') { updateCount++; break; }
@@ -3715,10 +3730,11 @@
       document.getElementById('edit_asin').value = item.asin || '';
       document.getElementById('edit_id').value = item.id || '';
 
-      if (typeof window.globalSupplierData === 'undefined' || window.globalSupplierData.length === 0) {
+      if (typeof window.globalSupplierData === 'undefined' || window.globalSupplierData.length === 0 || typeof window.globalChannelData === 'undefined') {
         try {
           const { data } = await sb.from('profiles').select('settings').eq('id', currentUser.id).maybeSingle();
           if (data && data.settings && data.settings.suppliers) window.globalSupplierData = data.settings.suppliers;
+          if (data && data.settings && data.settings.channels) window.globalChannelData = data.settings.channels;
         } catch(e) {}
       }
 
@@ -3733,6 +3749,20 @@
         if (item.supplier && !isExist) {
           supSelect.innerHTML += `<option value="${item.supplier}">${item.supplier} (手入力)</option>`;
         }
+      }
+
+      const chSelect = document.getElementById('edit_salesChannel');
+      if (chSelect) {
+        chSelect.innerHTML = '<option value="">ーー 未設定 ーー</option><option value="Amazon">Amazon</option>';
+        let isChExist = (item.salesChannel === 'Amazon' || !item.salesChannel);
+        (window.globalChannelData || []).forEach(c => {
+          chSelect.innerHTML += `<option value="${c}">${c}</option>`;
+          if (item.salesChannel === c) isChExist = true;
+        });
+        if (item.salesChannel && !isChExist) {
+          chSelect.innerHTML += `<option value="${item.salesChannel}">${item.salesChannel} (手入力)</option>`;
+        }
+        chSelect.value = item.salesChannel || '';
       }
 
       document.getElementById('edit_no').value = item.no || '';
@@ -3888,6 +3918,7 @@
         shipping_cost: Number(document.getElementById('edit_expense').value) || 0,
         sell_price: Number(document.getElementById('edit_estPrice').value) || 0,
         sale_date: document.getElementById('edit_saleDate').value || null,
+        sales_channel: document.getElementById('edit_salesChannel').value || null,
         order_number: document.getElementById('edit_orderNum').value || null,
         actual_sales: Number(document.getElementById('edit_actualSales').value) || 0,
         actual_shipping: -Math.abs(Number(document.getElementById('edit_actualShipping').value) || 0),
@@ -4425,6 +4456,7 @@
         document.getElementById('info-cond-d').value = (settings.conditions && settings.conditions.d) || "";
         document.getElementById('info-cond-e').value = (settings.conditions && settings.conditions.e) || "";
         document.getElementById('info-cond-f').value = (settings.conditions && settings.conditions.f) || "";
+        document.getElementById('info-channels').value = (settings.channels || []).join('\n');
 
         const cards = settings.cards || [];
         cards.forEach((card, i) => {
@@ -4466,9 +4498,11 @@
       }
 
       const suppliers = document.getElementById('info-suppliers').value.split('\n').map(s => s.trim()).filter(s => s !== "");
+      const channels = document.getElementById('info-channels').value.split('\n').map(s => s.trim()).filter(s => s !== "");
 
       const newSettings = {
         suppliers: suppliers,
+        channels: channels,
         conditions: {
           c: document.getElementById('info-cond-c').value,
           d: document.getElementById('info-cond-d').value,
@@ -4483,6 +4517,7 @@
         if (error) throw error;
         alert("🎯 設定を保存したで！！");
         window.globalSupplierData = suppliers;
+        window.globalChannelData = channels;
         openView('view-manager-menu');
       } catch(err) {
         alert("保存エラーや: " + err.message);
