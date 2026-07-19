@@ -2287,7 +2287,7 @@
 
           try {
             // 🎯 SKU自動採番: 既存の最大No+1
-            const { data: maxRows } = await sb.from('inventories').select('no').order('no', { ascending: false }).limit(1);
+            const { data: maxRows } = await sb.from('inventories').select('no').not('no', 'is', null).order('no', { ascending: false }).limit(1);
             const nextNo = (maxRows && maxRows.length > 0 && maxRows[0].no) ? maxRows[0].no + 1 : 1;
 
             const now = new Date();
@@ -3407,7 +3407,7 @@
         const { data: orig, error: fetchErr } = await sb.from('inventories').select('*').eq('id', id).single();
         if (fetchErr) throw fetchErr;
 
-        const { data: maxRows } = await sb.from('inventories').select('no').order('no', { ascending: false }).limit(1);
+        const { data: maxRows } = await sb.from('inventories').select('no').not('no', 'is', null).order('no', { ascending: false }).limit(1);
         const nextNo = (maxRows && maxRows.length > 0 && maxRows[0].no) ? maxRows[0].no + 1 : 1;
 
         // 元のSKU(No-仕入日-ASIN)から日付部分だけ引き継いで、Noを採番し直す
