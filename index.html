@@ -3720,10 +3720,10 @@
         }
       });
 
-      // 既存行の更新
-      const existingIds = Object.keys(updates).filter(id => Number(id) > 0);
-      for (const id of existingIds) {
-        await sb.from('inventories').update(updates[id]).eq('id', id);
+      // 既存行の更新（idはUUIDなので、_isNewフラグの有無で新規複製行と区別する）
+      const existingRowsToUpdate = rows.filter(r => !r._isNew && updates[r.id]);
+      for (const r of existingRowsToUpdate) {
+        await sb.from('inventories').update(updates[r.id]).eq('id', r.id);
       }
 
       // 新規複製行の登録（閉じてたSKUがAmazon側で再販された分）
