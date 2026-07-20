@@ -3613,7 +3613,9 @@
           condition: closedRow.condition, description: closedRow.description,
           purchase_date: closedRow.purchase_date, supplier: closedRow.supplier,
           purchase_url: closedRow.purchase_url, purchase_id: closedRow.purchase_id,
-          buy_price: closedRow.buy_price, shipping_cost: closedRow.shipping_cost,
+          // 💡 仕入値・送料経費は0円にする。同じ物理在庫の再販なので、
+          //    その仕入コストはすでに元の行(返金)で損失として計上済み。ここでまた引くと二重計上になる。
+          buy_price: 0, shipping_cost: 0,
           sell_price: closedRow.sell_price, fba_fee: closedRow.fba_fee, referral_fee: closedRow.referral_fee,
           is_listed: true,
           sale_date: null, order_number: null, actual_sales: 0, actual_shipping: 0,
@@ -3848,7 +3850,9 @@
           asin: orig.asin, title: orig.title, model: orig.model, jan: orig.jan,
           supplier: orig.supplier, purchase_url: orig.purchase_url, purchase_id: orig.purchase_id,
           condition: orig.condition, description: orig.description, image_url: orig.image_url,
-          buy_price: orig.buy_price, shipping_cost: orig.shipping_cost, sell_price: orig.sell_price,
+          // 💡 仕入値・送料経費は0円にする。同じ物理在庫の再出品なので、
+          //    その仕入コストはすでに元の行(返金)で損失として計上済み。ここでまた引くと二重計上になる。
+          buy_price: 0, shipping_cost: 0, sell_price: orig.sell_price,
           fba_fee: orig.fba_fee, referral_fee: orig.referral_fee,
           is_listed: false, no: orig.no, sku: orig.sku,
           user_id: currentUser.id
