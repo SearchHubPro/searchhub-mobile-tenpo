@@ -12,8 +12,8 @@
   <meta name="apple-mobile-web-app-title" content="SearchHub">
   <meta name="theme-color" content="#6d9eeb">
   
-  <link rel="apple-touch-icon-precomposed" href="https://i.ibb.co/Xrt68V7p/icon.png">
-  <link rel="shortcut icon" href="https://i.ibb.co/Xrt68V7p/icon.png">
+  <link rel="apple-touch-icon-precomposed" href="https://i.ibb.co/jkX8RD5V/Gemini-Generated-Image-f3uz5if3uz5if3uz-1.png">
+  <link rel="shortcut icon" href="https://i.ibb.co/jkX8RD5V/Gemini-Generated-Image-f3uz5if3uz5if3uz-1.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- 🚀 JANコード専用の爆速解析エンジン(Quagga) -->
@@ -1829,6 +1829,11 @@
 
     async function onAuthSuccess(user) {
       currentUser = user;
+
+      // 🔗 決済直後でまだuser_idが空のlicenses行があれば、同じメールアドレスで自分に紐付ける
+      try {
+        await sb.from('licenses').update({ user_id: user.id }).is('user_id', null).eq('email', user.email);
+      } catch (e) { /* 紐付け対象が無ければ何も起きないので無視してOK */ }
 
       // 🎫 ライセンス（Stripe決済状態）を確認
       const { data: license, error } = await sb.from('licenses')
