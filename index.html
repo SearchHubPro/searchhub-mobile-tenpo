@@ -1830,11 +1830,10 @@
     async function onAuthSuccess(user) {
       currentUser = user;
 
-      // 🔗 決済直後でまだuser_idが空のlicenses行があれば、同じメールアドレスで自分に紐付ける
+      // 🔗 決済直後でまだuser_idが空のlicenses行があれば、専用関数で自分に紐付ける
       try {
-        const { error: linkErr, count } = await sb.from('licenses').update({ user_id: user.id }, { count: 'exact' }).is('user_id', null).ilike('email', user.email);
+        const { error: linkErr } = await sb.rpc('claim_license');
         if (linkErr) console.error('ライセンス紐付けエラー:', linkErr);
-        console.log('ライセンス紐付け対象件数:', count);
       } catch (e) { console.error('ライセンス紐付け例外:', e); }
 
       // 🎫 ライセンス（Stripe決済状態）を確認
