@@ -1832,7 +1832,7 @@
 
       // 🔗 決済直後でまだuser_idが空のlicenses行があれば、同じメールアドレスで自分に紐付ける
       try {
-        await sb.from('licenses').update({ user_id: user.id }).is('user_id', null).eq('email', user.email);
+        await sb.from('licenses').update({ user_id: user.id }).is('user_id', null).ilike('email', user.email);
       } catch (e) { /* 紐付け対象が無ければ何も起きないので無視してOK */ }
 
       // 🎫 ライセンス（Stripe決済状態）を確認
